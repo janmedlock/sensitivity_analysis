@@ -7,7 +7,7 @@ from . import stats
 from . import _util
 
 
-def DGSM_samples(X, y, model, normalized=False):
+def DGSM_samples(X, y, model, normalized=True):
     '''The square of the gradient evaluated at sample parameter values.'''
     D = _gradient(model, X)
     v = stats.mean(D ** 2)
@@ -17,7 +17,7 @@ def DGSM_samples(X, y, model, normalized=False):
         return v
 
 
-def DGSM(model, parameters, n_samples, normalized=False):
+def DGSM(model, parameters, n_samples, normalized=True):
     '''The square of the gradient evaluated at sample parameter values.'''
     X = sampling.samples_Latin_hypercube(parameters, n_samples)
     if normalized:
