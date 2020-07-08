@@ -21,21 +21,33 @@ def _gradient(model, X, epsilon=1e-6):
     return grad
 
 
-def sensitivity(model, parameters, n_samples, normalized=False):
+def sensitivity_samples(X, y, model, normalized=False):
     '''The derivatives evaluated at the mean parameter values.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
     S = _gradient(model, stats.mean(X))
     if normalized:
-        y = _util.model_eval(model, X)
         return S * stats.std(X) / stats.std(y)
     else:
         return S
 
 
-def elasticity(model, parameters, n_samples):
+def sensitivity(model, parameters, n_samples, normalized=False):
+    '''The derivatives evaluated at the mean parameter values.'''
+    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    if normalized:
+        y = _util.model_eval(model, X)
+    else:
+        y = None
+    return sensitivity_samples(X, y, model, normalized=normalized)
+
+
+def elasticity_samples(X, y, model, normalized=False):
+    '''The elasticity evaluated at the mean parameter values.'''
+    S = sensitivity_samples(X, y, model, normalized=normalized)
+    return S * stats.mean(X) / stats.mean(y)
+
+
+def elasticity(model, parameters, n_samples, normalized=False):
     '''The elasticity evaluated at the mean parameter values.'''
     X = sampling.samples_Latin_hypercube(parameters, n_samples)
-    S = _gradient(model, stats.mean(X))
     y = _util.model_eval(model, X)
-    E = S * stats.mean(X) / stats.mean(y)
-    return E
+    return elasticity_samples(X, y, model, normalized=normalized)
