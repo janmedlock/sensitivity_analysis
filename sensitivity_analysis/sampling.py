@@ -4,7 +4,7 @@ import numpy
 import pandas
 
 
-def get_unstructured(parameters, n):
+def samples_unstructured(parameters, n):
     '''Get `n` samples from each of `parameters`.'''
     try:
         return pandas.DataFrame(
@@ -14,7 +14,7 @@ def get_unstructured(parameters, n):
             [p.rvs(n) for p in parameters])
 
 
-def _get_structured_1D(parameter, n):
+def _samples_structured_1D(parameter, n):
     '''Get `n` structured samples from `parameter`.
     A random sample is taken from each quantile [i / n, (i + 1) / n)
     for i = 0, 1, ..., n - 1.'''
@@ -32,11 +32,11 @@ def _get_structured_1D(parameter, n):
     return numpy.random.permutation(samples)
 
 
-def get_Latin_hypercube(parameters, n):
+def samples_Latin_hypercube(parameters, n):
     '''Get `n` samples of `parameters` using Latin hypercube sampling.'''
     try:
-        return pandas.DataFrame(
-            {k: _get_structured_1D(p, n) for (k, p) in parameters.items()})
+        return pandas.DataFrame({k: _samples_structured_1D(p, n)
+                                 for (k, p) in parameters.items()})
     except AttributeError:
-        return numpy.row_stack(
-            [_get_structured_1D(p, n) for p in parameters])
+        return numpy.row_stack([_samples_structured_1D(p, n)
+                                for p in parameters])

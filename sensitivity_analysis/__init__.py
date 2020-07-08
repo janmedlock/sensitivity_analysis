@@ -1,10 +1,10 @@
 '''Uncertainty and sensitivity analysis.'''
 
-from . import dgsm
-from . import linear_regression
-from . import local
+from .DGSM_ import *
+from .local import *
 from .plotting import *
-from . import prcc
-from . import sampling
-from . import sobol_index
+from .PRCC_ import *
+from .regression import *
+from .sampling import *
+from .Sobol_index import *
 from . import stats

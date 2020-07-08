@@ -15,10 +15,10 @@ import scipy.fft
 import scipy.stats
 
 from . import sampling
-from . import util
+from . import _util
 
 
-def get_probable_error(z, alpha=0.5):
+def _probable_error(z, alpha=0.5):
     '''Find delta such that
     Prob{|mean(z) - mu| > delta} = alpha,
     where mu is the true mean of z.'''
@@ -26,12 +26,12 @@ def get_probable_error(z, alpha=0.5):
             * numpy.sqrt(numpy.mean(z ** 2) - numpy.mean(z) ** 2))
 
 
-def get_indexes(model, parameters, n_samples, alpha=0.5):
+def Sobol_indexes(model, parameters, n_samples, alpha=0.5):
     '''Saltelli et al's algorithm from section 4.6.'''
-    A = sampling.get_Latin_hypercube(parameters, n_samples)
-    B = sampling.get_Latin_hypercube(parameters, n_samples)
-    y_A = util.model_eval(model, A)
-    y_B = util.model_eval(model, B)
+    A = sampling.samples_Latin_hypercube(parameters, n_samples)
+    B = sampling.samples_Latin_hypercube(parameters, n_samples)
+    y_A = _util.model_eval(model, A)
+    y_B = _util.model_eval(model, B)
     y = numpy.hstack((y_A, y_B))
     y_mean = numpy.mean(y)
     y_var = numpy.var(y, ddof=1)
@@ -50,21 +50,17 @@ def get_indexes(model, parameters, n_samples, alpha=0.5):
     for i in index:
         C = B.copy()
         C[i] = A[i]
-        y_C = util.model_eval(model, C)
+        y_C = _util.model_eval(model, C)
         y_A_times_y_C = y_A * y_C
         S[i] = (numpy.mean(y_A_times_y_C) - y_mean ** 2) / y_var
-        S_PE[i] = get_probable_error(y_A_times_y_C, alpha=alpha) / y_var
+        S_PE[i] = _probable_error(y_A_times_y_C, alpha=alpha) / y_var
         y_B_times_y_C = y_B * y_C
         S_T[i] = 1 - (numpy.mean(y_B_times_y_C) - y_mean ** 2) / y_var
-        S_T_PE[i] = get_probable_error(y_B_times_y_C, alpha=alpha) / y_var
+        S_T_PE[i] = _probable_error(y_B_times_y_C, alpha=alpha) / y_var
     return (S, S_PE, S_T, S_T_PE)
 
 
-def _get_q(s):
-    return numpy.arccos(numpy.cos(s)) / numpy.pi
-
-
-def get_S_RBD(model, parameters, n_samples, n_freqs=6):
+def S_RBD(model, parameters, n_samples, n_freqs=6):
     '''The algorithm from Saltelli et al, page 168, cleaned up a bit.
     E(y|X_{~i}) is approximated by an `n_freqs`-order Fourier expansion.'''
     s_0 = numpy.linspace(0, 2 * numpy.pi, n_samples)
@@ -72,7 +68,7 @@ def get_S_RBD(model, parameters, n_samples, n_freqs=6):
         index = parameters.keys()
         s = pandas.DataFrame({i: numpy.random.permutation(s_0)
                               for i in index})
-        q = _get_q(s)
+        q = numpy.arccos(numpy.cos(s)) / numpy.pi
         X = pandas.DataFrame({i: parameters[i].ppf(q[i])
                               for i in index})
         S = pandas.Series(index=index)
@@ -80,11 +76,11 @@ def get_S_RBD(model, parameters, n_samples, n_freqs=6):
         index = range(len(parameters))
         s = numpy.row_stack([numpy.random.permutation(s_0)
                              for i in index])
-        q = _get_q(s)
+        q = numpy.arccos(numpy.cos(s)) / numpy.pi
         X = numpy.row_stack([parameters[i].ppf(q[i])
                              for i in index])
         S = numpy.empty(len(index))
-    y = util.model_eval(model, X)
+    y = _util.model_eval(model, X)
     for i in index:
         order = numpy.argsort(s[i])
         y_reordered = y[order]
@@ -101,7 +97,7 @@ def get_S_RBD(model, parameters, n_samples, n_freqs=6):
     return S
 
 
-def get_S_RBD_DCT(model, parameters, n_samples, n_freqs=6):
+def S_RBD_DCT(model, parameters, n_samples, n_freqs=6):
     '''RBD using the DCT rather than the FFT.'''
     q_0 = numpy.linspace(0, 1, n_samples)
     if hasattr(parameters, 'keys'):
@@ -118,7 +114,7 @@ def get_S_RBD_DCT(model, parameters, n_samples, n_freqs=6):
         X = numpy.row_stack([parameters[i].ppf(q[i])
                              for i in index])
         S = numpy.empty(len(index))
-    y = util.model_eval(model, X)
+    y = _util.model_eval(model, X)
     for i in index:
         order = numpy.argsort(q[i])
         # spectrum_y = scipy.fft.dct(y[order], norm='ortho') ** 2

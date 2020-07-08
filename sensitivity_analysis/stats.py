@@ -5,6 +5,8 @@ import pandas
 import scipy.stats
 import statsmodels.api
 
+from . import _util
+
 
 def mean(X):
     if isinstance(X, (pandas.Series, pandas.DataFrame)):
@@ -27,7 +29,7 @@ def var(X, ddof=1):
         return numpy.var(X, ddof=ddof, axis=-1)
 
 
-def cc(X, y):
+def CC(X, y):
     '''Correlation coefficient, i.e. Pearson's rho.'''
     try:
         # If `X` is a pandas.DataFrame().
@@ -37,35 +39,33 @@ def cc(X, y):
     return rho
 
 
-def get_linear_residuals(Z, y):
+def _linear_residuals(Z, y):
     '''Find the residual between y and
     the linear regression of y against Z.'''
-    Z_ = statsmodels.api.add_constant(Z)
+    Z_ = _util.add_constant(Z)
     lm = statsmodels.api.OLS(y, Z_).fit()
     return lm.resid
 
 
-def pcc(X, y):
+def PCC(X, y):
     '''Partial correlation coefficient.'''
-    X_arr = numpy.asarray(X)
-    ncols = X_arr.shape[1]
-    rho = numpy.empty(ncols)
-    for col in range(ncols):
-        x = X_arr[:, col]
-        # All of the other columns except `col`.
-        Z = X_arr[:, numpy.arange(ncols) != col]
-        x_res = get_linear_residuals(Z, x)
-        y_res = get_linear_residuals(Z, y)
-        rho[col], _ = scipy.stats.pearsonr(x_res, y_res)
-    try:
-        # If `X` is a pandas.DataFrame().
-        rho = pandas.Series(rho, index=X.columns)
-    except AttributeError:
-        pass
+    if isinstance(X, pandas.DataFrame):
+        index = X.columns
+        rho = pandas.Series(index=index)
+    else:
+        index = pandas.RangeIndex(len(X))
+        rho = numpy.empty(len(index))
+    for i in index:
+        x = X[i]
+        # All of the other columns except `i`.
+        Z = X[index.drop(i)]
+        x_res = _linear_residuals(Z, x)
+        y_res = _linear_residuals(Z, y)
+        rho[i], _ = scipy.stats.pearsonr(x_res, y_res)
     return rho
 
 
-def rcc(X, y):
+def RCC(X, y):
     '''Rank correlation coefficient, i.e. Spearman's rho.'''
     try:
         # If `X` is a pandas.DataFrame().
@@ -75,17 +75,17 @@ def rcc(X, y):
     return rho
 
 
-def get_rank(X):
+def rank(X):
     '''Get quantile rank of X.
     The lowest rank is 0 and the highest is 1.'''
     try:
         # If `X` is a pandas.DataFrame().
-        rank = X.rank()
+        r = X.rank()
     except AttributeError:
-        rank = numpy.apply_along_axis(scipy.stats.rankdata, 0, X)
-    return (rank - 1) / (len(X) - 1)
+        r = numpy.apply_along_axis(scipy.stats.rankdata, 0, X)
+    return (r - 1) / (len(X) - 1)
 
 
-def prcc(X, y):
+def PRCC(X, y):
     '''Partial rank correlation coefficient.'''
-    return pcc(get_rank(X), get_rank(y))
+    return PCC(rank(X), rank(y))
