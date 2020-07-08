@@ -1,4 +1,5 @@
-'''Derivative-based global sensitivity measure.'''
+'''Derivative-based global sensitivity measure.
+Based on Lamboni et al, 2013.'''
 
 import numpy
 import pandas
