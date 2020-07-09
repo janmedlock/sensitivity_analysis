@@ -8,7 +8,7 @@ from . import stats
 from . import _util
 
 
-def _gradient(model, X, y=None, epsilon=1e-6):
+def _gradient(X, model, y=None, epsilon=1e-6):
     '''Estimate the gradient of model at X.'''
     if y is None:
         y = _util.model_eval(model, X)
@@ -49,7 +49,7 @@ def sensitivity_samples(X, y, model, normalized=True, _y_mean=False):
     '''The derivatives evaluated at the mean parameter values.'''
     X_mean = stats.mean(X)
     y_mean = _util.model_eval(model, X_mean)
-    S = _gradient(model, X_mean, y_mean)
+    S = _gradient(X_mean, model, y_mean)
     if normalized:
         S *= stats.std(X) / stats.std(y)
     if _y_mean:

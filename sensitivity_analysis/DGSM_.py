@@ -9,7 +9,7 @@ from . import _util
 
 def DGSM_samples(X, y, model, normalized=True):
     '''The square of the gradient evaluated at sample parameter values.'''
-    D = _gradient(model, X, y)
+    D = _gradient(X, model, y)
     v = stats.mean(D ** 2)
     if normalized:
         v *= stats.var(X) / stats.var(y)
