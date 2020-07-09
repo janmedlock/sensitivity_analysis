@@ -13,9 +13,8 @@ def linreg_coefficients_samples(X, y, normalized=True):
     lm = statsmodels.api.OLS(y, X_).fit()
     beta = lm.params[1:]
     if normalized:
-        return beta * stats.std(X) / stats.std(y)
-    else:
-        return beta
+        beta *= stats.std(X) / stats.std(y)
+    return beta
 
 
 def linreg_coefficients(model, parameters, n_samples, normalized=True):

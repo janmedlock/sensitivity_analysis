@@ -8,9 +8,10 @@ from . import stats
 from . import _util
 
 
-def _gradient(model, X, epsilon=1e-6):
+def _gradient(model, X, y=None, epsilon=1e-6):
     '''Estimate the gradient of model at X.'''
-    y = _util.model_eval(model, X)
+    if y is None:
+        y = _util.model_eval(model, X)
     if isinstance(X, pandas.Series):
         X_arr = X.values
     elif isinstance(X, pandas.DataFrame):
@@ -22,21 +23,37 @@ def _gradient(model, X, epsilon=1e-6):
     shape = (len(X_arr), ) + (1, ) * (numpy.ndim(X_arr) - 1) + (len(X_arr), )
     eye = numpy.identity(len(X_arr)).reshape(shape)
     X1 = X_arr[..., None] + epsilon * eye
+    if isinstance(X, pandas.Series):
+        X1 = pandas.DataFrame(X1.T, columns=X.index)
+    elif isinstance(X, pandas.DataFrame):
+        X1 = dict(zip(X.columns, X1))
     y1 = _util.model_eval(model, X1)
     grad = (y1 - numpy.asarray(y)[..., None]) / epsilon
     if isinstance(X, pandas.Series):
-        return pandas.Series(grad, index=X.index)
+        if isinstance(grad, pandas.Series):
+            grad.set_axis(X.index, inplace=True)
+        else:
+            grad = pandas.Series(grad, index=X.index)
     elif isinstance(X, pandas.DataFrame):
-        return pandas.DataFrame(grad, index=X.index, columns=X.columns)
-    else:
-        return grad.T
+        if isinstance(grad, pandas.DataFrame):
+            grad.set_axis(X.index, axis='index', inplace=True)
+            grad.set_axis(X.columns, axis='columns', inplace=True)
+        else:
+            grad = pandas.DataFrame(grad, index=X.index, columns=X.columns)
+    elif grad.ndim == 2:
+        grad = grad.T
+    return grad
 
 
-def sensitivity_samples(X, y, model, normalized=True):
+def sensitivity_samples(X, y, model, normalized=True, _y_mean=False):
     '''The derivatives evaluated at the mean parameter values.'''
-    S = _gradient(model, stats.mean(X))
+    X_mean = stats.mean(X)
+    y_mean = _util.model_eval(model, X_mean)
+    S = _gradient(model, X_mean, y_mean)
     if normalized:
-        return S * stats.std(X) / stats.std(y)
+        S *= stats.std(X) / stats.std(y)
+    if _y_mean:
+        return (S, y_mean)
     else:
         return S
 
@@ -53,8 +70,9 @@ def sensitivity(model, parameters, n_samples, normalized=True):
 
 def elasticity_samples(X, y, model, normalized=True):
     '''The elasticity evaluated at the mean parameter values.'''
-    S = sensitivity_samples(X, y, model, normalized=normalized)
-    return S * stats.mean(X) / stats.mean(y)
+    (S, y_mean) = sensitivity_samples(X, y, model, normalized=normalized,
+                                      _y_mean=True)
+    return S * stats.mean(X) / y_mean
 
 
 def elasticity(model, parameters, n_samples, normalized=True):

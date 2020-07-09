@@ -9,19 +9,15 @@ from . import _util
 
 def DGSM_samples(X, y, model, normalized=True):
     '''The square of the gradient evaluated at sample parameter values.'''
-    D = _gradient(model, X)
+    D = _gradient(model, X, y)
     v = stats.mean(D ** 2)
     if normalized:
-        return v * stats.var(X) / stats.var(y)
-    else:
-        return v
+        v *= stats.var(X) / stats.var(y)
+    return v
 
 
 def DGSM(model, parameters, n_samples, normalized=True):
     '''The square of the gradient evaluated at sample parameter values.'''
     X = sampling.samples_Latin_hypercube(parameters, n_samples)
-    if normalized:
-        y = _util.model_eval(model, X)
-    else:
-        y = None
+    y = _util.model_eval(model, X)
     return DGSM_samples(X, y, model, normalized=normalized)
