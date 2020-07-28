@@ -28,9 +28,9 @@ def scatterplots_samples(X, y, sharex=False):
     return fg
 
 
-def scatterplots(model, parameters, n_samples, sharex=False):
+def scatterplots(model, parameters, n_samples, sharex=False, seed=None):
     '''Make scatterplots of y against X.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y = _util.model_eval(model, X)
     return scatterplots_samples(X, y, sharex=sharex)
 
@@ -64,8 +64,8 @@ def residualplots_samples(X, y, sharex=False):
     return fg
 
 
-def residualplots(model, parameters, n_samples, sharex=False):
+def residualplots(model, parameters, n_samples, sharex=False, seed=None):
     '''Make scatterplots of residual y against residual X.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y = _util.model_eval(model, X)
     return residualplots_samples(X, y, sharex=sharex)

@@ -26,10 +26,10 @@ def _probable_error(z, alpha=0.5):
             * numpy.sqrt(numpy.mean(z ** 2) - numpy.mean(z) ** 2))
 
 
-def Sobol_indexes(model, parameters, n_samples, alpha=0.5):
+def Sobol_indexes(model, parameters, n_samples, alpha=0.5, seed=None):
     '''Saltelli et al's algorithm from section 4.6.'''
-    A = sampling.samples_Latin_hypercube(parameters, n_samples)
-    B = sampling.samples_Latin_hypercube(parameters, n_samples)
+    A = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
+    B = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y_A = _util.model_eval(model, A)
     y_B = _util.model_eval(model, B)
     y = numpy.hstack((y_A, y_B))
@@ -60,13 +60,14 @@ def Sobol_indexes(model, parameters, n_samples, alpha=0.5):
     return (S, S_PE, S_T, S_T_PE)
 
 
-def S_RBD(model, parameters, n_samples, n_freqs=6):
+def S_RBD(model, parameters, n_samples, n_freqs=6, seed=None):
     '''The algorithm from Saltelli et al, page 168, cleaned up a bit.
     E(y|X_{~i}) is approximated by an `n_freqs`-order Fourier expansion.'''
+    rng = numpy.random.default_rng(seed)
     s_0 = numpy.linspace(0, 2 * numpy.pi, n_samples)
     if hasattr(parameters, 'keys'):
         index = parameters.keys()
-        s = pandas.DataFrame({i: numpy.random.permutation(s_0)
+        s = pandas.DataFrame({i: rng.permutation(s_0)
                               for i in index})
         q = numpy.arccos(numpy.cos(s)) / numpy.pi
         X = pandas.DataFrame({i: parameters[i].ppf(q[i])
@@ -74,7 +75,7 @@ def S_RBD(model, parameters, n_samples, n_freqs=6):
         S = pandas.Series(index=index)
     else:
         index = range(len(parameters))
-        s = numpy.row_stack([numpy.random.permutation(s_0)
+        s = numpy.row_stack([rng.permutation(s_0)
                              for i in index])
         q = numpy.arccos(numpy.cos(s)) / numpy.pi
         X = numpy.row_stack([parameters[i].ppf(q[i])
@@ -97,19 +98,20 @@ def S_RBD(model, parameters, n_samples, n_freqs=6):
     return S
 
 
-def S_RBD_DCT(model, parameters, n_samples, n_freqs=6):
+def S_RBD_DCT(model, parameters, n_samples, n_freqs=6, seed=None):
     '''RBD using the DCT rather than the FFT.'''
+    rng = numpy.random.default_rng(seed)
     q_0 = numpy.linspace(0, 1, n_samples)
     if hasattr(parameters, 'keys'):
         index = parameters.keys()
-        q = pandas.DataFrame({i: numpy.random.permutation(q_0)
+        q = pandas.DataFrame({i: rng.permutation(q_0)
                               for i in index})
         X = pandas.DataFrame({i: parameters[i].ppf(q[i])
                               for i in index})
         S = pandas.Series(index=index)
     else:
         index = range(len(parameters))
-        q = numpy.row_stack([numpy.random.permutation(q_0)
+        q = numpy.row_stack([rng.permutation(q_0)
                              for i in index])
         X = numpy.row_stack([parameters[i].ppf(q[i])
                              for i in index])

@@ -58,9 +58,9 @@ def sensitivity_samples(X, y, model, normalized=True, _y_mean=False):
         return S
 
 
-def sensitivity(model, parameters, n_samples, normalized=True):
+def sensitivity(model, parameters, n_samples, normalized=True, seed=None):
     '''The derivatives evaluated at the mean parameter values.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     if normalized:
         y = _util.model_eval(model, X)
     else:
@@ -75,8 +75,8 @@ def elasticity_samples(X, y, model, normalized=True):
     return S * stats.mean(X) / y_mean
 
 
-def elasticity(model, parameters, n_samples, normalized=True):
+def elasticity(model, parameters, n_samples, normalized=True, seed=None):
     '''The elasticity evaluated at the mean parameter values.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y = _util.model_eval(model, X)
     return elasticity_samples(X, y, model, normalized=normalized)

@@ -16,8 +16,8 @@ def DGSM_samples(X, y, model, normalized=True):
     return v
 
 
-def DGSM(model, parameters, n_samples, normalized=True):
+def DGSM(model, parameters, n_samples, normalized=True, seed=None):
     '''The square of the gradient evaluated at sample parameter values.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y = _util.model_eval(model, X)
     return DGSM_samples(X, y, model, normalized=normalized)

@@ -17,8 +17,9 @@ def linreg_coefficients_samples(X, y, normalized=True):
     return beta
 
 
-def linreg_coefficients(model, parameters, n_samples, normalized=True):
+def linreg_coefficients(model, parameters, n_samples,
+                        normalized=True, seed=None):
     '''The linear regression coefficients.'''
-    X = sampling.samples_Latin_hypercube(parameters, n_samples)
+    X = sampling.samples_Latin_hypercube(parameters, n_samples, seed=seed)
     y = _util.model_eval(model, X)
     return linreg_coefficients_samples(X, y, normalized=normalized)
