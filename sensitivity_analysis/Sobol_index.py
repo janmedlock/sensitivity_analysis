@@ -35,14 +35,19 @@ def Sobol_indexes(model, parameters, n_samples, alpha=0.5, seed=None):
     y = numpy.hstack((y_A, y_B))
     y_mean = numpy.mean(y)
     y_var = numpy.var(y, ddof=1)
-    if hasattr(parameters, 'keys'):
+    try:
         index = parameters.keys()
+    except AttributeError:
+        index = range(len(parameters))
+        has_keys = False
+    else:
+        has_keys = True
+    if has_keys:
         S = pandas.Series(index=index)
         S_PE = pandas.Series(index=index)
         S_T = pandas.Series(index=index)
         S_T_PE = pandas.Series(index=index)
     else:
-        index = range(len(parameters))
         S = numpy.empty(len(index))
         S_PE = numpy.empty(len(index))
         S_T = numpy.empty(len(index))
@@ -65,23 +70,31 @@ def S_RBD(model, parameters, n_samples, n_freqs=6, seed=None):
     E(y|X_{~i}) is approximated by an `n_freqs`-order Fourier expansion.'''
     rng = numpy.random.default_rng(seed)
     s_0 = numpy.linspace(0, 2 * numpy.pi, n_samples)
-    if hasattr(parameters, 'keys'):
+    try:
         index = parameters.keys()
-        s = pandas.DataFrame({i: rng.permutation(s_0)
-                              for i in index})
-        q = numpy.arccos(numpy.cos(s)) / numpy.pi
-        X = pandas.DataFrame({i: parameters[i].ppf(q[i])
-                              for i in index})
+    except AttributeError:
+        index = range(len(parameters))
+        has_keys = False
+    else:
+        has_keys = True
+    s = (rng.permutation(s_0)
+         for _ in index)
+    if has_keys:
+        s = pandas.DataFrame(dict(zip(index, s)))
+    else:
+        s = numpy.row_stack(tuple(s))
+    q = numpy.arccos(numpy.cos(s)) / numpy.pi
+    X = (parameters[i].ppf(q[i])
+         for i in index)
+    if has_keys:
+        X = pandas.DataFrame(dict(zip(index, X)))
+    else:
+        X = numpy.row_stack(tuple(X))
+    y = _util.model_eval(model, X)
+    if has_keys:
         S = pandas.Series(index=index)
     else:
-        index = range(len(parameters))
-        s = numpy.row_stack([rng.permutation(s_0)
-                             for i in index])
-        q = numpy.arccos(numpy.cos(s)) / numpy.pi
-        X = numpy.row_stack([parameters[i].ppf(q[i])
-                             for i in index])
         S = numpy.empty(len(index))
-    y = _util.model_eval(model, X)
     for i in index:
         order = numpy.argsort(s[i])
         y_reordered = y[order]
@@ -102,21 +115,30 @@ def S_RBD_DCT(model, parameters, n_samples, n_freqs=6, seed=None):
     '''RBD using the DCT rather than the FFT.'''
     rng = numpy.random.default_rng(seed)
     q_0 = numpy.linspace(0, 1, n_samples)
-    if hasattr(parameters, 'keys'):
+    try:
         index = parameters.keys()
-        q = pandas.DataFrame({i: rng.permutation(q_0)
-                              for i in index})
-        X = pandas.DataFrame({i: parameters[i].ppf(q[i])
-                              for i in index})
+    except AttributeError:
+        index = range(len(parameters))
+        has_keys = False
+    else:
+        has_keys = True
+    q = (rng.permutation(q_0)
+         for _ in index)
+    if has_keys:
+        q = pandas.DataFrame(dict(zip(index, q)))
+    else:
+        q = numpy.row_stack(tuple(q))
+    X = (parameters[i].ppf(q[i])
+         for i in index)
+    if has_keys:
+        X = pandas.DataFrame(dict(zip(index, X)))
+    else:
+        X = numpy.row_stack(tuple(X))
+    y = _util.model_eval(model, X)
+    if has_keys:
         S = pandas.Series(index=index)
     else:
-        index = range(len(parameters))
-        q = numpy.row_stack([rng.permutation(q_0)
-                             for i in index])
-        X = numpy.row_stack([parameters[i].ppf(q[i])
-                             for i in index])
         S = numpy.empty(len(index))
-    y = _util.model_eval(model, X)
     for i in index:
         order = numpy.argsort(q[i])
         # spectrum_y = scipy.fft.dct(y[order], norm='ortho') ** 2

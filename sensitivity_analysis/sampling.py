@@ -10,10 +10,13 @@ def samples_unstructured(parameters, n_samples, seed=None):
     try:
         (keys, values) = zip(*parameters.items())
     except AttributeError:
-        (keys, values) = (None, parameters)
+        values = parameters
+        has_keys = False
+    else:
+        has_keys = True
     samples = (p.rvs(n_samples, random_state=rng)
                for p in values)
-    if keys is not None:
+    if has_keys:
         return pandas.DataFrame(dict(zip(keys, samples)))
     else:
         return numpy.row_stack(tuple(samples))
@@ -44,10 +47,13 @@ def samples_Latin_hypercube(parameters, n_samples, seed=None):
     try:
         (keys, values) = zip(*parameters.items())
     except AttributeError:
-        (keys, values) = (None, parameters)
+        values = parameters
+        has_keys = False
+    else:
+        has_keys = True
     samples = (_samples_structured_1D(p, n_samples, rng)
                for p in values)
-    if keys is not None:
+    if has_keys:
         return pandas.DataFrame(dict(zip(keys, samples)))
     else:
         return numpy.row_stack(tuple(samples))
