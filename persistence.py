@@ -127,13 +127,17 @@ def run_many(model, samples, seed=None, n_jobs=-1):
                 for sample in samples)
 
 
-if __name__ == '__main__':
+def get_parameters():
     parameters = dict(
         beta=gamma_from_mean_and_shape(0.03, 4),
         gamma=gamma_from_mean_and_shape(0.01, 4),
         mu=gamma_from_mean_and_shape(0.001, 4),
     )
+    return parameters
 
+
+if __name__ == '__main__':
+    parameters = get_parameters()
     n_samples = 1000
     seed_seq = numpy.random.SeedSequence(1)
     samples = sensitivity_analysis.samples_Latin_hypercube(
