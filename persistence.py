@@ -138,6 +138,7 @@ if __name__ == '__main__':
     seed_seq = numpy.random.SeedSequence(1)
     samples = sensitivity_analysis.samples_Latin_hypercube(
         parameters, n_samples, seed=get_seed(seed_seq))
+    numpy.save('samples.npy', samples)
     persistence_times = run_many(get_persistence_time, samples,
                                  seed=get_seed(seed_seq))
     numpy.save('persistence.npy', persistence_times)
