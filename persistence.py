@@ -86,15 +86,18 @@ def get_persistence_time(beta, gamma, mu, N_0=1000, t_max=1e6, seed=None):
         hazard_total = hazards.sum()
         if hazard_total > 0:
             t += rng.exponential(1 / hazard_total)
-            # Find which of the events occurred.
-            # Scale the hazards so that they sum to 1.
-            hazards_scaled[:] = hazards / hazard_total
-            which = rng.choice(n_transitions, p=hazards_scaled)
-            state += transitions[which]
+            if t > t_max:
+                t = t_max
+            else:
+                # Find which of the events occurred.
+                # Scale the hazards so that they sum to 1.
+                hazards_scaled[:] = hazards / hazard_total
+                which = rng.choice(n_transitions, p=hazards_scaled)
+                state += transitions[which]
         else:  # hazard_total == 0
             # Check that we don't have hazard_total < 0.
             assert numpy.isclose(hazard_total, 0)
-            t = numpy.PINF
+            t = t_max
     return t
 
 
