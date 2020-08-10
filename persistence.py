@@ -65,13 +65,13 @@ def update_hazards(hazards, t, state, beta, gamma, mu):
     )
 
 
-def stop(t, state):
+def stop(t, state, t_max):
     '''The stopping condition for the simulation.'''
     (S, I, R) = state
-    return (I == 0)
+    return (t >= t_max) | (I == 0)
 
 
-def get_persistence_time(beta, gamma, mu, N_0=1000, seed=None):
+def get_persistence_time(beta, gamma, mu, N_0=1000, t_max=1e6, seed=None):
     '''Simulate the persistence time for a stochastic general SIR model.'''
     rng = numpy.random.default_rng(seed)
     t = 0
@@ -80,7 +80,7 @@ def get_persistence_time(beta, gamma, mu, N_0=1000, seed=None):
     n_transitions = len(transitions)
     hazards = numpy.empty(n_transitions, dtype=float)
     hazards_scaled = numpy.empty(n_transitions, dtype=float)
-    while not numpy.isposinf(t) and not stop(t, state):
+    while not numpy.isposinf(t) and not stop(t, state, t_max):
         update_hazards(hazards, t, state, beta, gamma, mu)
         # Find the time to the next event.
         hazard_total = hazards.sum()
