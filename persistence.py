@@ -63,15 +63,16 @@ def update_hazards(hazards, t, state, beta, gamma, mu):
         beta * I / N * S,  # Infection
         gamma * I,         # Recovery
     )
+    assert (hazards >= 0).all()
 
 
-def stop(t, state, t_max):
+def stop(t, state):
     '''The stopping condition for the simulation.'''
     (S, I, R) = state
-    return (t >= t_max) | (I == 0)
+    return (I == 0)
 
 
-def get_persistence_time(beta, gamma, mu, N_0=1000, t_max=1e6, seed=None):
+def get_persistence_time(beta, gamma, mu, N_0=1000, t_max=10e6, seed=None):
     '''Simulate the persistence time for a stochastic general SIR model.'''
     rng = numpy.random.default_rng(seed)
     t = 0
@@ -80,23 +81,18 @@ def get_persistence_time(beta, gamma, mu, N_0=1000, t_max=1e6, seed=None):
     n_transitions = len(transitions)
     hazards = numpy.empty(n_transitions, dtype=float)
     hazards_scaled = numpy.empty(n_transitions, dtype=float)
-    while not numpy.isposinf(t) and not stop(t, state, t_max):
+    while (t < t_max) and not stop(t, state):
         update_hazards(hazards, t, state, beta, gamma, mu)
         # Find the time to the next event.
         hazard_total = hazards.sum()
-        if hazard_total > 0:
-            t += rng.exponential(1 / hazard_total)
-            if t > t_max:
-                t = t_max
-            else:
-                # Find which of the events occurred.
-                # Scale the hazards so that they sum to 1.
-                hazards_scaled[:] = hazards / hazard_total
-                which = rng.choice(n_transitions, p=hazards_scaled)
-                state += transitions[which]
-        else:  # hazard_total == 0
-            # Check that we don't have hazard_total < 0.
-            assert numpy.isclose(hazard_total, 0)
+        t += rng.exponential(1 / hazard_total)
+        if t < t_max:
+            # Find which of the events occurred.
+            # Scale the hazards so that they sum to 1.
+            hazards_scaled[:] = hazards / hazard_total
+            which = rng.choice(n_transitions, p=hazards_scaled)
+            state += transitions[which]
+        else:
             t = t_max
     return t
 
